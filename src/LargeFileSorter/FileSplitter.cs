@@ -7,18 +7,17 @@ namespace LargeFileSorter;
 
 public class FileSplitter
 {
+    private static ReadOnlySpan<byte> NewLine => Encoding.UTF8.GetBytes(Environment.NewLine).AsSpan();
 
-    private static ReadOnlySpan<byte> NewLine => new[] { (byte)'\n' };
-    
     private readonly int _rowsLimitInChunk;
     private readonly int _readInputFileBufferSizeInMb;
     private readonly string _inputFileName;
     private readonly FileHelper _fileHelper;
-    
+
     public FileSplitter(
-        int rowsLimitInChunk, 
-        int readInputFileBufferSizeInMb, 
-        string inputFileName, 
+        int rowsLimitInChunk,
+        int readInputFileBufferSizeInMb,
+        string inputFileName,
         FileHelper fileHelper)
     {
         _rowsLimitInChunk = rowsLimitInChunk;
@@ -26,7 +25,7 @@ public class FileSplitter
         _inputFileName = inputFileName;
         _fileHelper = fileHelper;
     }
-    
+
     public async Task SplitFileAndSortChunksAsync(CancellationToken cancellationToken)
     {
         await using var fileStream = File.OpenRead(_inputFileName);
@@ -49,7 +48,7 @@ public class FileSplitter
             {
                 chunk.Add(tmpStr);
                 linesCounter++;
-                if (linesCounter != _rowsLimitInChunk) 
+                if (linesCounter != _rowsLimitInChunk)
                     continue;
                 var chunkToSort = chunk;
                 tasks.Add(SortAndWriteChunkAsync(chunkToSort, comparer));
@@ -77,7 +76,7 @@ public class FileSplitter
         chunk.Sort(comparer);
         await File.WriteAllLinesAsync(_fileHelper.GetFullTempFileNamePath(), chunk);
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string? ReadLine(ref ReadOnlySequence<byte> buffer)
     {
@@ -87,5 +86,4 @@ public class FileSplitter
         buffer = buffer.Slice(reader.Position);
         return Encoding.UTF8.GetString(line);
     }
-
 }
